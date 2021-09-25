@@ -1,0 +1,32 @@
+name: Build and Release
+on:
+  release:
+    types: [published]
+
+jobs:
+  build_and_release:
+    name: Build and release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 12.16.2
+          cache: 'npm'
+      - name: Setup dependencies
+        run: |
+          npm ci
+          npm i -g nexe
+      - name: Build artifacts
+        run: |
+          nexe index.js -t linux-x64 -o kubeopenapi-jsonschema -r "./node_modules/**/*"
+          nexe index.js -t darwin-x64 -o kubeopenapi-jsonschema-darwin -r "./node_modules/**/*"
+          nexe index.js -t windows-x64 -o kubeopenapi-jsonschema -r "./node_modules/**/*"
+      - name: Release artifacts
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: 'kubeopenapi-jsonschema*'
+          allowUpdates: true
+          token: ${{ secrets.GITHUB_TOKEN }}
